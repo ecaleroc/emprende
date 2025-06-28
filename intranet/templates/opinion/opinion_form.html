@@ -1,0 +1,14 @@
+<form method="post">
+  {% csrf_token %}
+  <label>Título:</label><br>
+  <input type="text" name="titulo" value="{{ opinion.titulo|default:'' }}"><br>
+  <label>Descripción:</label><br>
+  <textarea name="descripcion">{{ opinion.descripcion|default:'' }}</textarea><br>
+  <label>Tipo:</label><br>
+  <input type="text" name="tipo" value="{{ opinion.tipo|default:'' }}"><br>
+  <label>Valoración (1-5):</label><br>
+  <input type="number" name="valoracion" min="1" max="5" value="{{ opinion.valoracion|default:1 }}"><br>
+  <label>ID Cliente:</label><br>
+  <input type="number" name="idcliente" value="{{ opinion.idcliente.idcliente|default:'' }}"><br><br>
+  <button type="submit">Guardar</button>
+</form>

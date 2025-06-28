@@ -1,0 +1,79 @@
+
+
+
+
+<div class="modal-header">
+  <h5 class="modal-title">Agregar Socio a {{ empresa.razon_social }}</h5>
+  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<form id="formAgregarSocio" action="{% url 'agregar_socio' empresa.idempresa %}">
+  <div class="modal-body">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="idpersona">Buscar por N° Documento:</label>
+    <select id="idpersona" name="idpersona" style="width:100%" class="form-select">
+    </select>
+    </div>
+    <div class="mb-3">
+      <label>Aporte Capital:</label>
+      {{ form.aporte_capital }}
+    </div>
+    <div class="mb-3">
+      <label>Estado:</label>
+      {{ form.estado }}
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="submit" class="btn btn-primary">Guardar</button>
+  </div>
+</form>
+
+<script>
+
+  function initSelect2Persona() {
+    $('#idpersona').select2({
+      placeholder: 'Buscar persona por DNI...',
+      width: '100%',
+      minimumInputLength: 3,
+      dropdownParent: $('#modalFormulario'), // <- importante
+      ajax: {
+        url: '/api/personas/buscar/',
+        dataType: 'json',
+        delay: 250,
+        data: function(params) {
+          return { term: params.term };
+        },
+        processResults: function(data) {
+          return { results: data.results };
+        }
+      }
+    });
+  }
+ // inicializar cuando se muestra el modal
+  $('#modalFormulario').on('shown.bs.modal', function () {
+    initSelect2Persona();
+  });
+
+  // Enviar formulario vía Ajax
+  $(document).on('submit', '#formAgregarSocio', function(e) {
+    e.preventDefault();
+    const form = $(this);
+    $.post({
+      url: form.attr('action'),
+      data: form.serialize(),
+      success: function(res) {
+        if (res.success) {
+          $('#modalFormulario').modal('hide');
+          alert('✅ Socio guardado correctamente');
+          location.reload();
+        } else {
+          $('#modalFormulario .modal-content').html(res.form_html);
+          initSelect2Persona();  // reinicializa si hay error
+        }
+      },
+      error: function() {
+        alert('❌ Error al enviar datos');
+      }
+    });
+  });
+</script>

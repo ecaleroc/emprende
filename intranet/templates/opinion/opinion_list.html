@@ -1,0 +1,13 @@
+<h2>Listado de Opiniones</h2>
+<table border="1">
+  <tr><th>ID</th><th>Título</th><th>Cliente</th><th>Acciones</th></tr>
+  {% for o in opiniones %}
+    <tr>
+      <td>{{ o.idopinion }}</td>
+      <td>{{ o.titulo }}</td>
+      <td>{{ o.idcliente }}</td>
+      <td><a href="{% url 'opinion_update' o.idopinion %}">Editar</a></td>
+    </tr>
+  {% endfor %}
+</table>
+<a href="{% url 'opinion_create' %}">Nueva Opinión</a>

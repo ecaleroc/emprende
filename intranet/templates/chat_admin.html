@@ -1,0 +1,82 @@
+{% extends 'componentes/base_intranet.html' %}
+{% load static %}
+{% block titulocuerpo %}Chat{% endblock %}
+{% block cuerpo %}
+<!-- Incluye Bootstrap y jQuery -->
+<!-- Incluye Bootstrap y jQuery y Socket.IO -->
+
+
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<div class="row">
+    <div class="col-md-4">
+        <div id="user-list" class="list-group"></div>
+    </div>
+    <div class="col-md-8">
+        
+        <div class="p-3 px-lg-4 border-bottom">
+                <div class="row">
+                    <div class="col-xl-4 col-7">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 avatar-sm me-3 d-sm-block d-none">
+                                <img src="{% static 'assets/images/users/avatar-2.jpg' %}" alt=""
+                                    class="img-fluid d-block rounded-circle">
+                            </div>
+                            <div class="flex-grow-1">
+                                <h5 class="font-size-14 mb-1 text-truncate"><a href="#" class="text-dark"><h5 id="chat-with">Selecciona un usuario</h5> </a></h5>
+                                <p class="text-muted text-truncate mb-0">Online</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-8 col-5">
+                        <ul class="list-inline user-chat-nav text-end mb-0">
+                            <li class="list-inline-item">
+                                <div class="dropdown">
+                                    <button class="btn nav-btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                                        aria-haspopup="true" aria-expanded="false">
+                                        <i class="bx bx-search"></i>
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-md p-2">
+                                        <form class="px-2">
+                                            <div>
+                                                <input type="text" class="form-control border bg-light-subtle"
+                                                    placeholder="Search...">
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </li>
+
+                            <li class="list-inline-item">
+                                <div class="dropdown">
+                                    <button class="btn nav-btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                                        aria-haspopup="true" aria-expanded="false">
+                                        <i class="bx bx-dots-horizontal-rounded"></i>
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-end">
+                                        <a class="dropdown-item" href="#">Profile</a>
+                                        <a class="dropdown-item" href="#">Archive</a>
+                                        <a class="dropdown-item" href="#">Muted</a>
+                                        <a class="dropdown-item" href="#">Delete</a>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-conversation p-3 px-2" data-simplebar>
+                <ul class="list-unstyled mb-0" id="chat-window" >
+                    
+                </ul>
+            </div>  
+
+        <div class="input-group mt-2">
+            <input id="reply-text" class="form-control" placeholder="Escribe tu respuesta...">
+            <button id="send-reply" class="btn btn-primary">Enviar ppu</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- End d-lg-flex  -->
+{% endblock %}

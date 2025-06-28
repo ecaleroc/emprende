@@ -1,0 +1,111 @@
+<form id="registro-form" method="post">
+    <div class="progress mb-3">
+    <div id="registro-progress" class="progress-bar bg-success" role="progressbar" style="width: 50%">Paso 1 de 2</div>
+  </div>
+  {% load static %}
+  {% csrf_token %}
+  <ul class="nav nav-tabs" id="registroTabs" role="tablist">
+    <li class="nav-item">
+      <a class="nav-link active" id="persona-tab" data-bs-toggle="tab" href="#persona" role="tab" onclick="updateProgress(1)">Datos personales</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="usuario-tab" data-bs-toggle="tab" href="#usuario" role="tab" onclick="updateProgress(2)">Cuenta</a>
+    </li>
+  </ul>
+  <div class="tab-content mt-3">
+    <div class="tab-pane fade show active" id="persona" role="tabpanel">
+
+            <div class="mb-2">
+        <label for="tipopersona">Tipo de Persona</label>
+        <select name="tipopersona" class="form-control" required>
+          <option value="">Seleccione</option>
+          {% for item in tipo_persona_choices %}
+          <option value="{{ item.idtabla }}">{{ item.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="nombres_id" class="form-label">Nombres</label>
+        <input type="text" class="form-control" id="nombres_id" name="nombres" placeholder="Ingrese sus nombres" required>
+        <div class="invalid-feedback">
+          Por favor ingresar sus nombres
+        </div>
+      </div>
+      <div class="mb-2">
+        <label for="tipodocumento">Tipo de Documento</label>
+        <select name="tipodocumento" class="form-control" required>
+          <option value="">Seleccione</option>
+          {% for item in tipo_documento_choices %}
+          <option value="{{ item.idtabla }}">{{ item.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="nrodocumento_id" class="form-label">Número de documento</label>
+        <input type="text" class="form-control" id="nrodocumento_id" placeholder="Ingrese sus nombres" name="nrodocumento" required>
+        <div class="invalid-feedback">
+          Por favor ingresar sus nombres
+        </div>
+      </div>
+    </div>
+    <div class="tab-pane fade" id="usuario" role="tabpanel">
+      {{ usuario_form.as_p }}
+    </div>
+  </div>
+  <button type="submit" class="btn btn-success mt-3">Registrar</button>
+</form>
+
+<script>
+
+        // estrellas
+        function updateProgress(step) {
+  const progress = document.getElementById('registro-progress');
+  if (step === 1) {
+    progress.style.width = '50%';
+    progress.textContent = 'Paso 1 de 2';
+  } else {
+    progress.style.width = '100%';
+    progress.textContent = 'Paso 2 de 2';
+  }
+}
+
+
+
+</script>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function () {
+
+  function validarPaso(selector) {
+    let valido = true;
+    $(selector).each(function () {
+      if (!this.checkValidity()) {
+        $(this).addClass('is-invalid');
+        valido = false;
+      } else {
+        $(this).removeClass('is-invalid');
+      }
+    });
+    return valido;
+  }
+
+  // Paso 1: Validar "Datos personales" antes de pasar a "Cuenta"
+  $('#usuario-tab').on('click', function (e) {
+    if (!validarPaso('#persona input, #persona select')) {
+      e.preventDefault();
+      alert('Por favor completa los datos personales correctamente.');
+      updateProgress(1);
+    }
+  });
+
+  // Paso 2: Validar "Cuenta" antes de enviar el formulario
+  $('#registro-form').on('submit', function (e) {
+    if (!validarPaso('#usuario input')) {
+      e.preventDefault();
+      alert('Por favor completa los datos de cuenta correctamente.');
+      updateProgress(2);
+    }
+  });
+});
+</script>

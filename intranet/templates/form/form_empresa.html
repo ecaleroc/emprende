@@ -1,0 +1,309 @@
+{% extends 'componentes/base_intranet.html' %}
+{% load static %}
+{% block titulocuerpo %}Crea tu empresa{% endblock %}
+{% block cuerpo %}
+
+<div class="card">
+  <div class="card-header">Archivos y Firmas</div>
+  <div class="card-body">
+    <ul class="list-group">
+      {% for archivo in archivos %}
+        <li class="list-group-item">
+
+          <div><strong>{{ archivo.nombre }}</strong> ({{ archivo.formato }})</div>
+          <div class="text-muted">Subido: {{ archivo.created_at }}</div>
+
+          <ul class="mt-2 ps-3">
+            {% for firma in firmas %}
+              {% if firma.idarchivo.idarchivo == archivo.idarchivo %}
+                <li>
+                  <i class="bi bi-person-check-fill text-success"></i>
+                  {{ firma.idpersona.nombres }} {{ firma.idpersona.apellidos }}
+                  - <small>{{ firma.fecha_firma|default:"pendiente" }}</small>
+                </li>
+              {% endif %}
+            {% empty %}
+              <li>No hay firmas</li>
+            {% endfor %}
+          </ul>
+          <form method="POST" action="{% url 'firmar_pdf_multiple' archivo.idarchivo %}">
+  {% csrf_token %}
+  <button class="btn btn-sm btn-outline-success mt-2">Firmar todas las páginas</button>
+</form>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+
+<div class="card p-4">
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#step1">1. Persona</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#step2">2. Empresa</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#step3">3. Documentos</a></li>
+    </ul>
+    <div class="tab-content mt-3">
+        <div class="tab-pane fade show active" id="step1">
+            <form id="form-persona">
+                {% csrf_token %}
+                <input id="correo" name="correo" placeholder="Correo" class="form-control mb-2">
+                <input id="nombres" name="nombres" placeholder="Nombres" class="form-control mb-2">
+                <input id="apellido_paterno" name="apellido_paterno" placeholder="Apellidos paterno"
+                    class="form-control mb-2">
+                <input id="apellido_materno" name="apellido_materno" placeholder="Apellidos materno"
+                    class="form-control mb-2">
+                <div class="mb-2">
+                    <label for="tipodocumento">Tipo de Documento</label>
+                    <select name="tipodocumento" class="form-control" required>
+                        <option value="">Seleccione</option>
+                        {% for item in tipo_documento_choices %}
+                        <option value="{{ item.idtabla }}">{{ item.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="nrodocumento_id" class="form-label">Número de documento</label>
+                    <input type="text" class="form-control" id="nrodocumento_id" placeholder="Ingrese sus nombres"
+                        name="nrodocumento" required>
+                    <div class="invalid-feedback">
+                        Por favor ingresar sus nombres
+                    </div>
+                </div>
+                <select name="departamento" id="departamento" class="form-control mb-2">
+                    <option value="">Seleccione Departamento</option>
+                    {% for dep in departamentos %}
+                    <option value="{{ dep.iddepartamento }}">{{ dep.nombre }}</option>
+                    {% endfor %}
+                </select>
+
+                <select name="provincia" id="provincia" class="form-control mb-2">
+                    <option value="">Seleccione Provincia</option>
+                </select>
+
+                <select name="distrito" id="distrito" class="form-control mb-2">
+                    <option value="">Seleccione Distrito</option>
+                </select>
+                <button type="submit" class="btn btn-primary">Siguiente</button>
+            </form>
+        </div>
+        <div class="tab-pane fade" id="step2">
+            <form id="form-empresa">
+                <input type="hidden" name="representante_id" id="representante_id">
+                <input name="nombre" placeholder="Razón Social" class="form-control mb-2">
+                <input name="ruc" placeholder="RUC" class="form-control mb-2">
+                <input name="direccion" placeholder="Dirección" class="form-control mb-2">
+                <input name="cargo" placeholder="Cargo del representante" class="form-control mb-2">
+                <button type="submit" class="btn btn-primary">Siguiente</button>
+            </form>
+        </div>
+        <div class="tab-pane fade" id="step3">
+            <div class="card">
+                <div class="card-header">Archivos Subidos</div>
+                <div class="card-body">
+                    <form id="form-archivo" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="file" name="archivo" class="form-control mb-2" accept="application/pdf" required>
+                        
+                        <button class="btn btn-primary">Subir</button>
+                    </form>
+                    <div id="alerta" class="alert d-none mt-3"></div>
+
+                    <ul id="archivo-timeline" class="timeline mt-4"></ul>
+                </div>
+            </div>
+
+
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<style>
+    .timeline {
+        border-left: 3px solid #ddd;
+        padding-left: 10px;
+    }
+
+    .timeline-item {
+        margin-bottom: 15px;
+        position: relative;
+    }
+
+    .timeline-item:before {
+        content: '';
+        width: 10px;
+        height: 10px;
+        background-color: #0d6efd;
+        border-radius: 50%;
+        position: absolute;
+        left: -16px;
+        top: 5px;
+    }
+</style>
+<script>
+    $('#form-archivo').on('submit', function (e) {
+        e.preventDefault();
+        let formData = new FormData(this);
+        $.ajax({
+            url: '/archivo/subir/',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: { 'X-CSRFToken': $('[name="csrfmiddlewaretoken"]').val() },
+            success: function (res) {
+                mostrarAlerta('✅ Archivo subido correctamente', 'success');
+                cargarTimeline();  // recargar timeline si corresponde
+                $('#form-archivo')[0].reset();
+            },
+            error: function (xhr) {
+                let mensaje = xhr.responseText || '❌ Error desconocido';
+                mostrarAlerta(mensaje, 'danger');
+            }
+        });
+    });
+    $('#form-persona').on('submit', function (e) {
+        e.preventDefault();
+        $.post('/registrar_persona/', $(this).serialize(), function (res) {
+            $('#representante_id').val(res.persona_id);
+            $('a[href="#step2"]').tab('show');
+        });
+    });
+
+    $('#form-empresa').on('submit', function (e) {
+        e.preventDefault();
+        $.post('/registrar_empresa/', $(this).serialize(), function (res) {
+            $('#empresa_id').val(res.empresa_id);
+            $('a[href="#step3"]').tab('show');
+        });
+    });
+
+    /* $('#form-archivo').on('submit', function(e) {
+      e.preventDefault();
+      let formData = new FormData(this);
+      $.ajax({
+        url: '/subir_archivo/',
+        type: 'POST',
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: function(res) {
+          $('#timeline').append(`<li class="list-group-item">📎 ${res.nombre} - ${res.estado} - ${res.fecha}</li>`);
+        }
+      });
+      
+    }); */
+    $('#departamento').change(function () {
+        const id = $(this).val();
+        $('#provincia').empty().append('<option value="">Cargando...</option>');
+        $.get('/ajax/provincias/', { departamento_id: id }, function (data) {
+            $('#provincia').empty().append('<option value="">Seleccione Provincia</option>');
+            data.forEach(p => $('#provincia').append(`<option value="${p.idprovincia}">${p.nombre}</option>`));
+        });
+    });
+
+    $('#provincia').change(function () {
+        const id = $(this).val();
+        $('#distrito').empty().append('<option value="">Cargando...</option>');
+        $.get('/ajax/distritos/', { provincia_id: id }, function (data) {
+            $('#distrito').empty().append('<option value="">Seleccione Distrito</option>');
+            data.forEach(d => $('#distrito').append(`<option value="${d.iddistrito}">${d.nombre}</option>`));
+        });
+    });
+
+
+    function mostrarAlerta(mensaje, tipo = 'danger') {
+    $('#alerta')
+        .removeClass('d-none alert-success alert-danger alert-info')
+        .addClass(`alert alert-${tipo}`)
+        .html(mensaje);
+}
+    function cargarTimeline() {
+    $.get('/api/archivos/', function(data) {
+        $('#archivo-timeline').empty();
+        data.forEach(function(archivo) {
+    $('#archivo-timeline').append(`
+        <div class="timeline-item">
+            <strong>${archivo.nombre}</strong><br>
+            <small>${archivo.peso} ${archivo.unidad} - ${archivo.formato}</small><br>
+            <small>${archivo.created_at}</small><br>
+            <button class="btn btn-sm btn-outline-primary mt-1" onclick="firmarArchivo(${archivo.idarchivo})">Firmar</button>
+            <button class="btn btn-sm btn-outline-success mt-1" onclick="verificarArchivo(${archivo.idarchivo})">Verificar</button>
+            <button class="btn btn-sm btn-outline-dark mt-1" onclick="window.location.href='/descargar-firmado/' + ${archivo.idarchivo}">Descargar ZIP</button>
+            <button class="btn btn-sm btn-outline-warning mt-1" onclick="window.location.href='/firmar-pdf-embebido/' + ${archivo.idarchivo}">Descargar PDF Firmado</button>
+            <button class="btn btn-sm btn-outline-info mt-1" onclick="window.location.href='/firmar-pdf-paginas/' + ${archivo.idarchivo}">
+                Firmar Todas las Páginas
+            </button>
+            <button class="btn btn-sm btn-primary" onclick="firmarDocumento(+ ${archivo.idarchivo}, 2)">Firmar 2</button>
+
+        </div>
+    `);
+});
+    });
+}
+
+function firmarDocumento(idArchivo, idPersona) {
+    alert("llegue")
+  $.post("/archivo/firma/usuario/", {
+    archivo: idArchivo,
+    persona: idPersona,
+    csrfmiddlewaretoken: '{{ csrf_token }}'
+  }, function (res) {
+    alert(res.mensaje);
+    location.reload();
+  });
+}
+
+function firmarArchivo(id) {
+    $.ajax({
+        url: `/firmar/${id}/`,
+        type: 'POST',
+        success: function (res) {
+            alert("✅ " + res.message);
+        },
+        error: function (xhr) {
+            alert("❌ Error al firmar: " + xhr.responseText);
+        }
+    });
+}
+
+function verificarArchivo(id) {
+    $.ajax({
+        url: `/verificar/${id}/`,
+        type: 'POST',
+        success: function (res) {
+            if (res.valido) {
+                alert("✅ Firma válida");
+            } else {
+                alert("⚠️ Firma inválida: " + res.message);
+            }
+        },
+        error: function () {
+            alert("❌ Error al verificar");
+        }
+    });
+}
+
+$(document).ready(function() {
+    cargarTimeline();
+});
+
+
+    $.post('/ajax/persona/', {
+        csrfmiddlewaretoken: $('[name="csrfmiddlewaretoken"]').val()
+    }, function (data) {
+        console.log(data);
+        $('#representante_id').val(data.usuario.IDPERSONA);
+        $('#nombres').val(data.usuario.NOMBRES);
+        $('#apellido_paterno').val(data.usuario.APELLIDO_PATERNO);
+        $('#correo').val(data.usuario.USUARIO);
+    });
+    function firmarDigitalmente(idarchivo) {
+        alert('Firmando archivo ID: ' + idarchivo);
+        // Aquí se puede implementar firma digital real con cryptography vía otra vista AJAX
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,185 @@
+<div class="modal-header">
+    <h5 class="modal-title">Archivos para firma - {{ empresa.razon_social }}</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+<div class="card">
+        <div class="card-header">Archivos Subidos</div>
+        <div class="card-body">
+            <form id="form-archivo" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="idempresa" id="idempresa" value="{{ empresa.idempresa }}">
+                <input type="file" name="archivo" class="form-control mb-2" accept="application/pdf" required>
+
+                <button class="btn btn-primary">Subir</button>
+            </form>
+            <div id="alerta" class="alert d-none mt-3"></div>
+
+            <ul id="archivo-timeline" class="timeline mt-4"></ul>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">Lista de documentos a firmar</h4>
+                </div><!-- end card header -->
+
+                <div class="card-body">
+
+                    <div class="row justify-content-center">
+                        <div class="col-xl-10">
+                            <div class="timeline">
+                                <div class="timeline-container">
+                                    <div class="timeline-end">
+                                        <p>Inicio</p>
+                                    </div>
+                                    <!--inicio-->
+                                    <div class="timeline-continue">
+                                     
+
+{% for archivo in archivos %}
+  {% if forloop.counter0|divisibleby:2 %}
+<div class="row timeline-left">
+    <div class="col-md-6 d-md-none d-block">
+        <div class="timeline-icon">
+            <i class="bx bx-user-pin text-primary h2 mb-0"></i>
+        </div>
+    </div>
+
+  {% else %}
+<div class="row timeline-right">
+    <div class="col-md-6">
+        <div class="timeline-icon">
+            <i class="bx bx-briefcase-alt-2 text-primary h2 mb-0"></i>
+        </div>
+    </div>
+  {% endif %}
+<div class="col-md-6">
+                                                <div class="timeline-box">
+                                                    <div class="timeline-date bg-primary text-center rounded">
+                                                        <h3 class="text-white mb-0">{{ archivo.created_at|date:"d" }}</h3>
+                                                        <p class="mb-0 text-white-50">{{ archivo.created_at|date:"M" }}</p>
+                                                    </div>
+                                                    <div class="event-content">
+                                                        <div class="timeline-text">
+
+      <h6>{{ archivo.nombre }}</h6>
+      <p>
+        <a href="{{ MEDIA_URL }}{{ archivo.directorio }}{{ archivo.nombre }}" target="_blank">Ver archivo</a> —
+        {{ archivo.created_at|date:"d/m/Y H:i" }}
+      </p>
+      <p>
+        <form method="POST" action="{% url 'firmar_pdf_multiple' archivo.idarchivo %}">
+        {% csrf_token %}
+        <button class="btn btn-sm btn-outline-success mt-2">Descargar archivo firmado</button>
+        </form>
+      </p>
+      <ul class="list-unstyled mb-0">
+        {% for socio in socios %}
+        <li class="py-1">
+            <i class="mdi mdi-circle-medium me-1 text-success align-middle"></i>
+          {{ socio.idpersona.nombres }} {{ socio.idpersona.apellido_paterno }}:
+          {% with idarchivo=archivo.idarchivo|stringformat:"s" idpersona=socio.idpersona.idpersona|stringformat:"s" %}
+            {% with clave=idarchivo|add:"-"|add:idpersona %}
+                {% if clave in firmas_set %}
+                ✅ Firmado
+                {% else %}
+                <button class="btn btn-sm btn-outline-primary"
+                      onclick="firmarDocumento({{ archivo.idarchivo }}, {{ socio.idpersona.idpersona }})">
+                Firmar
+              </button>
+                {% endif %}
+            {% endwith %}
+            {% endwith %}
+          
+        </li>
+        {% endfor %}
+      </ul>
+    
+</div>
+
+  </div></div>
+
+  </div>
+  </div> <!-- cierra row -->
+{% empty %}
+  <p>No hay archivos relacionados a esta empresa.</p>
+{% endfor %}
+
+                                    </div>
+                                    <!--fin-->
+                                    <div class="timeline-start">
+                                        <p>Fin</p>
+                                    </div>
+                                    <div class="timeline-launch">
+                                        <div class="timeline-box">
+                                            <div class="timeline-text">
+                                                <h3 class="font-size-18">Empresa creada el </h3>
+                                                <p class="text-muted mb-0">Lorem.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- end card body -->
+            </div>
+            <!-- end card -->
+        </div>
+        <!-- end col -->
+    </div>
+
+    
+</div>
+
+<script>
+    function firmarDocumento(idArchivo, idPersona) {
+  $.post("/archivo/firma/usuario/", {
+    archivo: idArchivo,
+    persona: idPersona,
+    csrfmiddlewaretoken: '{{ csrf_token }}'
+  }, function (res) {
+    alert(res.mensaje);
+    location.reload();
+  });
+}
+    function firmarArchivo(idArchivo, idSocio) {
+        $.post("/archivo/firmar/", {
+            archivo_id: idArchivo,
+            socio_id: idSocio,
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+        }, function (data) {
+            if (data.success) {
+                alert("✅ Firma registrada");
+                $('#modalFormulario').modal('hide');
+                location.reload();
+            } else {
+                alert("❌ Error al firmar");
+            }
+        });
+    }
+    $('#form-archivo').on('submit', function (e) {
+        e.preventDefault();
+        let formData = new FormData(this);
+        $.ajax({
+            url: '/archivo/subir/',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: { 'X-CSRFToken': $('[name="csrfmiddlewaretoken"]').val() },
+            success: function (res) {
+                mostrarAlerta('✅ Archivo subido correctamente', 'success');
+                cargarTimeline();  // recargar timeline si corresponde
+                $('#form-archivo')[0].reset();
+            },
+            error: function (xhr) {
+                let mensaje = xhr.responseText || '❌ Error desconocido';
+                mostrarAlerta(mensaje, 'danger');
+            }
+        });
+    });
+</script>

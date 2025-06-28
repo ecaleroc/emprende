@@ -1,0 +1,124 @@
+{% extends 'componentes/base_intranet.html' %}
+{% block style %}
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+{% endblock %}
+{% block cuerpo %}
+<div class="card">
+  <div class="card-header">Listado de Personas</div>
+  <div class="card-body">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>RUC</th>
+          <th>RAXON SOCIAL</th>
+          <th>NRO SOCIOS</th>
+          <th>CAPITAL MONETARIO</th>
+          <th>ACTIVIDAD</th>
+          <th>FECHA INICIO Y FIN PROCESO</th>
+          <th>COSTO BASE</th>
+          <th>TIPO DE OFERTA</th>
+          <th>FECHA CADUCIDAD</th>
+          <th>STOCK</th>
+          <th>ACCION</th>
+        </tr>
+      </thead>
+      <tbody>
+      
+
+        {% for e in empresas %}
+        <tr data-id="{{ e.idempresa }}">
+          <td>{{ forloop.counter }}</td>
+          <td>{{ e.idpersona.nrodocumento }}</td>
+          <td>{{ e.idpersona.nombres }}</td>
+          <td>{{ e.nro_socios }}</td>
+          <td>{{ e.capital_monetario }}</td>
+          <td>{{ e.actividad_negocio }}</td>
+          <td>{{ e.fecha_inicio_proceso }} - {{ e.fecha_fin_proceso_estimada }}</td>
+          <td>{{ e.costo_base_constitucion }}</td>
+          <td>{{ e.tipo_oferta }}</td>
+          <td>{{ e.fecha_caducidad_oferta }}</td>
+          <td>{{ e.stock_oferta }}</td>
+          <td>
+            <button class="btn btn-sm btn-primary" data-action="actualizar" onclick="formularioAccion(this)" title="Actualizar">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="btn btn-sm btn-danger" data-action="eliminar" onclick="formularioAccion(this)" title="Eliminar">
+            <i class="fas fa-trash"></i>
+          </button>
+          <button class="btn btn-sm btn-secondary" data-action="asignar-rol" onclick="formularioAccion(this)" title="Asignar Rol">
+            <i class="fas fa-user-shield"></i>
+          </button>
+          <!-- <button class="btn btn-sm btn-info" data-action="agregar-representante" onclick="formularioAccion(this)" title="Agregar Representante">
+            <i class="fas fa-user-plus"></i>
+          </button> -->
+          <button class="btn btn-sm btn-warning" data-action="agregar-requisitos" onclick="formularioAccion(this)" title="Agregar Requisitos">
+            <i class="fas fa-file-alt"></i>
+          </button>
+          <button class="btn btn-sm btn-success" data-action="agregar-socios" onclick="formularioAccion(this)" title="Agregar Socios">
+            <i class="fas fa-users"></i>
+          </button>
+          <button class="btn btn-sm btn-dark" onclick="verHistorial(this)" title="Ver Historial">
+            <i class="fas fa-history"></i>
+          </button>
+          <button class="btn btn-sm btn-success" data-action="firmar-documentos" onclick="formularioAccion(this)" title="Firmar Documentos">
+            <i class="fas fa-file-signature"></i>
+          </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modales -->
+<div class="modal fade" id="modalFormulario" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content"></div>
+  </div>
+</div>
+<div class="modal fade" id="modalHistorial" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Historial de Creación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body"></div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block script %}
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+  console.log(typeof $.fn.select2); // Debe devolver "function"
+    console.log("padre");
+  function formularioAccion(button) {
+    const accion = button.dataset.action;
+    const id = button.closest('tr').dataset.id;
+    $.get(`/empresa/${accion}/${id}/`, function (formHtml) {
+      $('#modalFormulario .modal-content').html(formHtml);
+      $('#modalFormulario').modal('show');
+    }).fail(function () {
+      alert("Error al cargar el formulario de " + accion);
+    });
+  }
+
+  function verHistorial(button) {
+    const accion = button.dataset.action;
+    const idEmpresa = button.closest('tr').dataset.id;
+    $.get(`/empresa/historial/${idEmpresa}/`, function (timelineHtml) {
+      $('#modalHistorial .modal-body').html(timelineHtml);
+      $('#modalHistorial').modal('show');
+    }).fail(function () {
+      alert("No se pudo cargar el historial de la empresa.");
+    });
+  }
+</script>
+{% endblock %}

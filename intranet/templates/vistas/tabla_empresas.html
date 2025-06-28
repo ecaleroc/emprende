@@ -1,0 +1,40 @@
+{% extends 'componentes/base_intranet.html' %}
+{% block cuerpo %}
+
+<div class="card">
+  <div class="card-header">Tabla de Empresas, Usuarios y Personas</div>
+  <div class="card-body">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Empresa</th>
+          <th>RUC</th>
+          <th>Representante</th>
+          <th>Usuario</th>
+          <th>Persona asociada</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for empresa in empresas %}
+        <tr>
+          <td>{{ empresa.nombre }}</td>
+          <td>{{ empresa.ruc }}</td>
+          <td>{{ empresa.representante.nombres }} {{ empresa.representante.apellidos }}</td>
+          <td>
+            {% for usuario in usuarios %}
+              {% if usuario.idpersona.idpersona == empresa.representante.idpersona %}
+                {{ usuario.usuario }}
+              {% endif %}
+            {% endfor %}
+          </td>
+          <td>
+            {{ empresa.representante.nombres }} {{ empresa.representante.apellidos }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
